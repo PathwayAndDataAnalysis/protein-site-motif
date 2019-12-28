@@ -29,13 +29,14 @@ public class ExhaustiveMotifGenerator
 		Set<Motif> extended = new HashSet<>();
 		motifs.stream().filter(m -> motifs.stream().noneMatch(m::isGeneralOf)).forEach(m ->
 			extended.addAll(runRecursive(m, Deviation.NEGATIVE)));
-
 		motifs.addAll(extended);
+
 		return motifs;
 	}
 
 	private Set<Motif> runRecursive(Motif motif, Deviation dev)
 	{
+		System.out.println("motif = " + motif);
 		FreqMatrix bgM = new FreqMatrix(sequences.seqWidth, centralAA);
 		bgM.addSequences(sequences, motif, null);
 
@@ -46,6 +47,7 @@ public class ExhaustiveMotifGenerator
 
 		DeviationDetector dd = new DeviationDetector(bgM, selM, fdrThr, dev);
 		Map<AAInPos, Tuple> signif = dd.getSignificantDeviations();
+		System.out.println("signif.size() = " + signif.size());
 
 		Set<Motif> results = new HashSet<>();
 

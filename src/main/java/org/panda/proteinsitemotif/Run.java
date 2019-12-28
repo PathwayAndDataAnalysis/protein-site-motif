@@ -93,14 +93,16 @@ public class Run
 
 	public static void runExhaustive() throws IOException
 	{
-		int seqWidth = 17;
-		int selectStatus = -1;
+		int seqWidth = 13;
+		int selectStatus = 1;
 		double fdrThr = 0.1;
 		Character aa = 'S';
-		String caseName = "without-feedback";
-		String inDir = "/Users/ozgun/Documents/Analyses/Aslan-platelet/" + caseName + "/";
+		String caseName = "with-feedback";
+//		String inDir = "/Users/ozgun/Documents/Analyses/Aslan-platelet/" + caseName + "/";
+		String inDir = "/home/ozgun/Analyses/Aslan-platelet/" + caseName + "/";
 		String file = inDir + "data-fdr0.1.txt";
-		String outDir = "/Users/ozgun/Documents/Analyses/motif/";
+//		String outDir = "/Users/ozgun/Documents/Analyses/motif/";
+		String outDir = "/home/ozgun/Analyses/ProteinMotif/exhaustive/";
 		int iterations = 10000;
 		int minTotalTrg = 3;
 
@@ -111,8 +113,10 @@ public class Run
 
 		sq = sq.reduce(new AAReducer());
 
-		ExhaustiveMotifGenerator emg = new ExhaustiveMotifGenerator(sq, selectStatus, aa, fdrThr);
-		Set<Motif> motifs = emg.run();
+		ExhaustiveMotifGenerator mg = new ExhaustiveMotifGenerator(sq, selectStatus, aa, fdrThr);
+//		GreedyIterativeMotifGenerator mg = new GreedyIterativeMotifGenerator(sq, selectStatus, aa, fdrThr);
+		Set<Motif> motifs = mg.run();
+
 		Motif.write(motifs, outDir + caseName + "-motif.txt");
 		MotifDAG dag = new MotifDAG(motifs);
 		dag.writeGraph(outDir + caseName + "-motif-DAG.sif");
