@@ -150,8 +150,8 @@ public class EnrichmentTester
 		posCtrl = new HashMap<>();
 		negCtrl = new HashMap<>();
 
-//		String file = "/Users/ozgun/Documents/Data/causal-priors.txt";
-		String file = "/home/ozgun/Data/PC/causal-priors.txt";
+		String file = "/Users/ozgun/Documents/Data/causal-priors.txt";
+//		String file = "/home/ozgun/Data/PC/causal-priors.txt";
 
 		Files.lines(Paths.get(file)).map(l -> l.split("\t"))
 			.filter(t -> t[1].startsWith("p") || t[1].startsWith("de")).filter(t -> t.length >= 5 && !t[4].isEmpty())

@@ -121,4 +121,24 @@ public class Sequences
 	{
 		return getClassifiedSeqStream(motif, status).map(cs -> cs.gene + "-" + cs.site).collect(Collectors.toSet());
 	}
+
+	public void randomizeSelection()
+	{
+		Set<Integer> set = seqList.stream().map(s -> s.status).collect(Collectors.toSet());
+		System.out.println("set = " + set);
+
+		long upCnt = seqList.stream().filter(s -> s.status == 1).count();
+		long dwCnt = seqList.stream().filter(s -> s.status == -1).count();
+
+		long chCnt = upCnt + dwCnt;
+
+		List<ClassifiedSequence> list = new ArrayList<>(seqList);
+		Collections.shuffle(list);
+		List<ClassifiedSequence> chList = list.subList(0, (int) chCnt);
+		List<ClassifiedSequence> upList = chList.subList(0, (int) upCnt);
+
+		upList.forEach(s -> s.status = 1);
+		chList.stream().filter(s -> !upList.contains(s)).forEach(s -> s.status = -1);
+		list.stream().filter(s -> !chList.contains(s)).forEach(s -> s.status = 0);
+	}
 }

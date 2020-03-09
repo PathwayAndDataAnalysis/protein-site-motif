@@ -97,12 +97,12 @@ public class Run
 		int selectStatus = 1;
 		double fdrThr = 0.1;
 		Character aa = 'S';
-		String caseName = "with-feedback";
-//		String inDir = "/Users/ozgun/Documents/Analyses/Aslan-platelet/" + caseName + "/";
-		String inDir = "/home/ozgun/Analyses/Aslan-platelet/" + caseName + "/";
+		String caseName = "cond1";
+		String inDir = "/Users/ozgun/Documents/Analyses/platelet/" + caseName + "/";
+//		String inDir = "/home/ozgun/Analyses/Aslan-platelet/" + caseName + "/";
 		String file = inDir + "data-fdr0.1.txt";
-//		String outDir = "/Users/ozgun/Documents/Analyses/motif/";
-		String outDir = "/home/ozgun/Analyses/ProteinMotif/exhaustive/";
+		String outDir = "/Users/ozgun/Documents/Analyses/ProteinMotif/exhaustive/";
+//		String outDir = "/home/ozgun/Analyses/ProteinMotif/exhaustive/";
 		int iterations = 10000;
 		int minTotalTrg = 3;
 
@@ -110,6 +110,9 @@ public class Run
 
 		Sequences sq = new Sequences(seqWidth);
 		sq.loadFromAslanCPFiles(file);
+
+		// DEBUG!!!!!!!!!!
+//		sq.randomizeSelection();
 
 		sq = sq.reduce(new AAReducer());
 
