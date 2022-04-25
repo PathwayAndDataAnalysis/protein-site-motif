@@ -2,6 +2,7 @@ package org.panda.proteinsitemotif;
 
 import org.panda.resource.HGNC;
 import org.panda.resource.UniProtSequence;
+import org.panda.utility.ArrayUtil;
 import org.panda.utility.TermCounter;
 
 import java.io.IOException;
@@ -51,6 +52,44 @@ public class Sequences
 						if (seq != null)
 						{
 							int status = (int) Math.signum(val);
+							seqList.add(new ClassifiedSequence(seq, status, sym, siteStr));
+						}
+					}
+				}
+			}
+		});
+	}
+
+	public void loadFromSignedPCaseCPDataFile(String file, double pThr) throws IOException
+	{
+		String[] header = Files.lines(Paths.get(file)).findFirst().get().split("\t");
+		int pInd = ArrayUtil.indexOf(header, "SignedP");
+
+		Files.lines(Paths.get(file)).skip(1).map(l -> l.split("\t")).filter(t -> t.length > 4 && !t[2].isEmpty()).forEach(t ->
+		{
+			String sym = t[1].split(" ")[0];
+			String upID = HGNC.get().getUniProt(sym);
+			if (upID == null) return;
+
+			String sites = t[2].split(" ")[0];
+
+			double val = Double.valueOf(t[pInd]);
+
+			for (String siteStr : sites.split("\\|"))
+			{
+				String aa = siteStr.substring(0, 1);
+				int site = Integer.valueOf(siteStr.substring(1));
+
+				if (site > halfW)
+				{
+					String aaFound = UniProtSequence.get().getAminoacidAt(upID, site);
+					if (aaFound != null && aaFound.equals(aa))
+					{
+						String seq = UniProtSequence.get().getSeqAround(upID, site, seqWidth);
+
+						if (seq != null)
+						{
+							int status = Math.abs(val) <= pThr ? (int) Math.signum(val) : 0;
 							seqList.add(new ClassifiedSequence(seq, status, sym, siteStr));
 						}
 					}

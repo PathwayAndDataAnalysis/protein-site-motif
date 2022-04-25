@@ -16,7 +16,8 @@ public class Run
 //		load();
 //		findMotifs();
 //		generateBinaryGraph();
-		runExhaustive();
+//		runExhaustive();
+		runForIL6Data();
 //		findEnrichmentsOfMotifs();
 	}
 
@@ -113,6 +114,75 @@ public class Run
 
 		// DEBUG!!!!!!!!!!
 //		sq.randomizeSelection();
+
+		sq = sq.reduce(new AAReducer());
+
+		ExhaustiveMotifGenerator mg = new ExhaustiveMotifGenerator(sq, selectStatus, aa, fdrThr);
+//		GreedyIterativeMotifGenerator mg = new GreedyIterativeMotifGenerator(sq, selectStatus, aa, fdrThr);
+		Set<Motif> motifs = mg.run();
+
+		Motif.write(motifs, outDir + caseName + "-motif.txt");
+		MotifDAG dag = new MotifDAG(motifs);
+		dag.writeGraph(outDir + caseName + "-motif-DAG.sif");
+
+		String motEnrichFile = outDir + caseName + "-motifs-with-enrichment.txt";
+		BufferedWriter writer1 = Files.newBufferedWriter(Paths.get(motEnrichFile));
+		EnrichmentTester et = new EnrichmentTester();
+		Map<String, String> tooltipMap = new HashMap<>();
+
+		for (Motif motif : motifs)
+		{
+			Map<String, Double> signif = et.findEnrichedTFs(sq, motif, new Motif(0, aa, true), fdrThr, iterations, minTotalTrg);
+			FileUtil.lnwrite(motif.toShortString() + "\t", writer1);
+			StringBuilder sb = new StringBuilder();
+			signif.keySet().stream().sorted(Comparator.comparing(tf -> Math.abs(signif.get(tf)))).forEach(tf ->
+			{
+				int sign = (signif.get(tf) < 0 ? -1 : 1) * selectStatus;
+				sb.append(sign < 0 ? "-" : "").append(tf).append(", ").append(signif.get(tf)).append("\\n");
+				int tfSign = (int) Math.signum(signif.get(tf));
+				FileUtil.write(" " + (tfSign * selectStatus < 0 ? "-" : "") + tf, writer1);
+			});
+			if (sb.length() > 0)
+			{
+				String tooltip = sb.toString();
+				tooltip = tooltip.substring(0, tooltip.length() - 2);
+				tooltipMap.put(motif.toShortString(), tooltip);
+			}
+		}
+
+		writer1.close();
+
+		BufferedWriter writer2 = Files.newBufferedWriter(Paths.get(outDir + caseName + "-motif-DAG.format"));
+
+		for (String motifID : tooltipMap.keySet())
+		{
+			FileUtil.writeln("node\t" + motifID + "\tcolor\t255 255 200", writer2);
+			FileUtil.writeln("node\t" + motifID + "\ttooltip\t" + tooltipMap.get(motifID), writer2);
+		}
+
+		writer2.close();
+
+		new SequenceMotifMatcher(sq, selectStatus, inDir + "results.txt", motEnrichFile).run(outDir + caseName + "-mot-seq-assoc.txt");
+	}
+
+	public static void runForIL6Data() throws IOException
+	{
+		int seqWidth = 13;
+		int selectStatus = -1;
+		double fdrThr = 0.1;
+		Character aa = 'S';
+		String base = "/Users/ozgun/Documents/Analyses/Platelet-IL6/";
+		String inDir = base + "fdr0.1/";
+		String file = base + "data.txt";
+		double pThr = 0.1;
+		String outDir = base + "motif-out/";
+		int iterations = 10000;
+		int minTotalTrg = 3;
+
+		String caseName = aa + "-w" + seqWidth + (selectStatus == 1 ? "-upreg" : "-dwreg");
+
+		Sequences sq = new Sequences(seqWidth);
+		sq.loadFromSignedPCaseCPDataFile(file, pThr);
 
 		sq = sq.reduce(new AAReducer());
 

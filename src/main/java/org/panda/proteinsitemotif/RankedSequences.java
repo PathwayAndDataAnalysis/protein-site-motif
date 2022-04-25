@@ -26,7 +26,7 @@ public class RankedSequences
 		seqList = new ArrayList<>();
 	}
 
-	public void loadFromCPFiles(String file, String symColName, String siteColName, String signedPColName) throws IOException
+	public void loadFromCPFiles(String file, String symColName, String siteColName, String signedPColName, String featureColName) throws IOException
 	{
 		Map<Sequence, Double> seqToP = new HashMap<>();
 
@@ -34,11 +34,14 @@ public class RankedSequences
 		int symInd = ArrayUtil.indexOf(header, symColName);
 		int siteInd = ArrayUtil.indexOf(header, siteColName);
 		int pInd = ArrayUtil.indexOf(header, signedPColName);
+		int fInd = ArrayUtil.indexOf(header, featureColName);
 
 		int maxColInd = Math.max(Math.max(symInd, siteInd), pInd);
 
 		Files.lines(Paths.get(file)).skip(1).map(l -> l.split("\t")).filter(t -> t.length > maxColInd && !t[siteInd].isEmpty()).forEach(t ->
 		{
+			if (fInd >= 0 && !t[fInd].equals("P")) return;
+
 			String sym = t[symInd].split(" ")[0];
 			String upID = HGNC.get().getUniProt(sym);
 			if (upID == null) return;
@@ -123,13 +126,62 @@ public class RankedSequences
 	public void printAAFreqs()
 	{
 		TermCounter tc = new TermCounter();
-		seqList.forEach(cs ->
+		seqList.forEach(seq ->
 		{
-			for (int i = 0; i < cs.seq.length(); i++)
+			for (int i = 0; i < seq.seq.length(); i++)
 			{
-				tc.addTerm(cs.seq.substring(i, i+1));
+				tc.addTerm(seq.seq.substring(i, i+1));
 			}
 		});
 		tc.print();
+	}
+
+	public void printAAFreqsInPositions(Motif filter)
+	{
+		TermCounter[] tc = new TermCounter[seqWidth];
+		for (int i = 0; i < seqWidth; i++)
+		{
+			tc[i] = new TermCounter();
+		}
+
+		seqList.stream().filter(seq -> seq.matches(filter)).forEach(seq ->
+		{
+			for (int i = 0; i < seq.seq.length(); i++)
+			{
+				tc[i].addTerm(seq.seq.substring(i, i+1));
+			}
+		});
+
+		for (int i = -halfW; i <= halfW; i++)
+		{
+			System.out.println("position = " + i);
+			tc[i + halfW].print();
+		}
+	}
+
+	public static void main(String[] args) throws IOException
+	{
+		RankedSequences rs = new RankedSequences(11);
+		rs.loadFromCPFiles("../Finkle-PHYS-479/test_data/sample-phosphoproteomic-data.txt", "Symbols",
+			"Sites", "SignedP", "Feature");
+		System.out.println("rs.seqList.size() = " + rs.seqList.size());
+		Set<String> genes = new HashSet<>();
+		for (Sequence sequence : rs.seqList)
+		{
+			genes.add(sequence.gene);
+		}
+		System.out.println("genes.size() = " + genes.size());
+
+		RankedSequences reduced = rs.reduce(new AAReducer());
+
+		Motif motif = new Motif();
+		motif.add(new AAInPos(0, 'S', true));
+		motif.add(new AAInPos(1, 'P', true));
+		motif.add(new AAInPos(-4, 'S', false));
+		motif.add(new AAInPos(5, 'K', true));
+
+		reduced.printAAFreqsInPositions(motif);
+
+
 	}
 }
